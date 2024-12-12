@@ -6,12 +6,31 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
+from flask_cors import CORS
 import numpy as np
 from datetime import datetime
-
+import spacy
 # Initialize Flask app
-app = Flask(__name__)
+app = Flask(_name_)
+CORS(app)
+
+def extract_location_from_headline(headline):
+    """
+    Extracts locations from a given news headline using spaCy.
+
+    :param headline: The news headline (string).
+    :return: A list of detected locations.
+    """
+    # Load the spaCy English model
+    nlp = spacy.load("en_core_web_sm")
+    
+    # Process the headline
+    doc = nlp(headline)
+    
+    # Extract locations
+    locations = [ent.text for ent in doc.ents if ent.label_ == "GPE"]
+    
+    return locations
 
 # Define global keywords dictionary
 DISASTER_KEYWORDS = {
@@ -285,9 +304,12 @@ def analyze_message():
         all_keywords = [term for terms in DISASTER_KEYWORDS.values() for term in terms]
         max_similarity = float(np.max(similarity_scores))
 
+        location = extract_location_from_headline(message)
+
         return jsonify({
             "input_analysis": {
                 "message": message,
+                "location" :location,
                 "source": source,
                 "predicted_disaster": predicted_disaster,
                 "confidence": {
@@ -297,7 +319,6 @@ def analyze_message():
                              "ml_classification"
                 }
             },
-            "similar_news": similar_news,
             "cluster_info": {
                 "cluster_id": int(cluster[0]),
                 "total_clusters": num_clusters
@@ -324,5 +345,5 @@ def get_similarities():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True, port=3000)
+if _name_ == '_main_':
+    app.run(debug=True, port=3001)
